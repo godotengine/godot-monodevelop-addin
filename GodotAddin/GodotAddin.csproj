@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net471</TargetFramework>
+    </PropertyGroup>
+    <ItemGroup>
+        <AddinReference Include="MonoDevelop.Debugger" />
+        <AddinReference Include="MonoDevelop.Debugger.Soft" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="MonoDevelop.Addins" Version="0.4.7" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\GodotTools.IdeConnection\GodotTools.IdeConnection.csproj">
+        </ProjectReference>
+    </ItemGroup>
+</Project>
