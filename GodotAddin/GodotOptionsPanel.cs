@@ -6,8 +6,8 @@ namespace GodotAddin
 {
     public class GodotOptionsPanel : OptionsPanel
     {
-        FileEntry godotExeFileEntry = new FileEntry();
-        Gtk.CheckButton alwaysUseExeCheckButton = new Gtk.CheckButton();
+        private readonly FileEntry _godotExeFileEntry = new FileEntry();
+        private readonly Gtk.CheckButton _alwaysUseExeCheckButton = new Gtk.CheckButton();
 
         public override Control CreatePanelWidget()
         {
@@ -31,8 +31,8 @@ namespace GodotAddin
             };
 
             godotExeHBox.PackStart(godotExeLabel, false, false, 0);
-            godotExeFileEntry.Path = Settings.GodotExecutablePath.Value;
-            godotExeHBox.PackStart(godotExeFileEntry, true, true, 0);
+            _godotExeFileEntry.Path = Settings.GodotExecutablePath.Value;
+            godotExeHBox.PackStart(_godotExeFileEntry, true, true, 0);
 
             vbox.PackStart(godotExeHBox, false, false, 0);
 
@@ -45,8 +45,8 @@ namespace GodotAddin
             };
 
             alwaysUseExeHBox.PackStart(alwaysUseExeLabel, false, false, 0);
-            alwaysUseExeCheckButton.Active = Settings.AlwaysUseConfiguredExecutable.Value;
-            alwaysUseExeHBox.PackStart(alwaysUseExeCheckButton, true, true, 0);
+            _alwaysUseExeCheckButton.Active = Settings.AlwaysUseConfiguredExecutable.Value;
+            alwaysUseExeHBox.PackStart(_alwaysUseExeCheckButton, true, true, 0);
 
             vbox.PackStart(alwaysUseExeHBox, false, false, 0);
 
@@ -57,8 +57,8 @@ namespace GodotAddin
 
         public override void ApplyChanges()
         {
-            Settings.GodotExecutablePath.Value = godotExeFileEntry.Path;
-            Settings.GodotExecutablePath.Value = godotExeFileEntry.Path;
+            Settings.GodotExecutablePath.Value = _godotExeFileEntry.Path;
+            Settings.GodotExecutablePath.Value = _godotExeFileEntry.Path;
         }
     }
 }

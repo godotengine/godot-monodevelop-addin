@@ -40,12 +40,12 @@ namespace GodotAddin
         public void AddArray(List<GodotVariant> array)
         {
             AddType(GodotVariant.Type.Array);
-            AddInt((int)array.Count);
+            AddInt(array.Count);
 
-            foreach (object element in array)
+            foreach (var element in array)
             {
-                if (element is string str)
-                    AddString(str);
+                if (element.VariantType == GodotVariant.Type.String)
+                    AddString(element.Get<string>());
                 else
                     throw new NotImplementedException();
             }
@@ -109,6 +109,16 @@ namespace GodotAddin
 
         public object Value { get; }
         public Type VariantType { get; }
+
+        public T Get<T>()
+        {
+            return (T)Value;
+        }
+
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
 
         public GodotVariant(string value)
         {

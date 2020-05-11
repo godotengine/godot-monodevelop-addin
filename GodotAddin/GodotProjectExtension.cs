@@ -12,14 +12,14 @@ namespace GodotAddin
     [ExportProjectModelExtension]
     public class GodotProjectExtension : DotNetProjectExtension, IDisposable
     {
-        private static readonly SolutionItemRunConfiguration[] runConfigurations =
+        private static readonly SolutionItemRunConfiguration[] RunConfigurations =
         {
             new ProjectRunConfiguration("Play in Editor"),
             new ProjectRunConfiguration("Launch"),
             new ProjectRunConfiguration("Attach")
         };
 
-        private static readonly ExecutionType[] executionTypes =
+        private static readonly ExecutionType[] ExecutionTypes =
         {
             ExecutionType.PlayInEditor,
             ExecutionType.Launch,
@@ -31,17 +31,17 @@ namespace GodotAddin
             switch (type)
             {
                 case ExecutionType.PlayInEditor:
-                    return runConfigurations[0];
+                    return RunConfigurations[0];
                 case ExecutionType.Launch:
-                    return runConfigurations[1];
+                    return RunConfigurations[1];
                 case ExecutionType.Attach:
-                    return runConfigurations[2];
+                    return RunConfigurations[2];
                 default:
                     throw new NotSupportedException();
             }
         }
 
-        private GodotMonoDevelopClient godotIdeClient;
+        private GodotMonoDevelopClient _godotIdeClient;
 
         protected override void OnItemReady()
         {
@@ -51,14 +51,13 @@ namespace GodotAddin
                 return;
 
             string godotProjectDir = Path.GetDirectoryName(GetGodotProjectPath());
-            string godotProjectMetadataDir = Path.Combine(godotProjectDir, ".mono", "metadata");
             LoggingService.LogInfo($"Godot project directory is: {godotProjectDir}");
 
             try
             {
-                godotIdeClient?.Dispose();
-                godotIdeClient = new GodotMonoDevelopClient(godotProjectMetadataDir);
-                godotIdeClient.Start();
+                _godotIdeClient?.Dispose();
+                _godotIdeClient = new GodotMonoDevelopClient(godotProjectDir);
+                _godotIdeClient.Start();
             }
             catch (Exception e)
             {
@@ -69,7 +68,7 @@ namespace GodotAddin
         protected override IEnumerable<SolutionItemRunConfiguration> OnGetRunConfigurations(OperationContext ctx)
         {
             if (IsGodotProject())
-                return runConfigurations;
+                return RunConfigurations;
 
             return base.OnGetRunConfigurations(ctx);
         }
@@ -78,14 +77,14 @@ namespace GodotAddin
         {
             if (IsGodotProject())
             {
-                var runConfigurationIndex = runConfigurations.IndexOf(runConfiguration);
+                var runConfigurationIndex = RunConfigurations.IndexOf(runConfiguration);
 
                 if (runConfigurationIndex == -1)
                     LoggingService.LogError($"Unexpected RunConfiguration {runConfiguration.Id} {runConfiguration.GetType().FullName}");
 
-                var executionType = executionTypes[runConfigurationIndex];
+                var executionType = ExecutionTypes[runConfigurationIndex];
 
-                if (executionType == ExecutionType.PlayInEditor && !godotIdeClient.IsConnected)
+                if (executionType == ExecutionType.PlayInEditor && !_godotIdeClient.IsConnected)
                     LoggingService.LogError($"Cannot launch editor player because the Godot Ide Client is not connected");
 
                 string godotProjectPath = GetGodotProjectPath();
@@ -94,7 +93,7 @@ namespace GodotAddin
                     godotProjectPath,
                     executionType,
                     Path.GetDirectoryName(godotProjectPath),
-                    godotIdeClient
+                    _godotIdeClient
                 );
             }
 
@@ -106,13 +105,13 @@ namespace GodotAddin
             return Path.Combine(Path.GetDirectoryName(Project.ParentSolution.FileName), "project.godot");
         }
 
-        private bool? cachedIsGodotProject;
+        private bool? _cachedIsGodotProject;
 
         private bool IsGodotProject()
         {
-            if (!cachedIsGodotProject.HasValue)
-                cachedIsGodotProject = File.Exists(GetGodotProjectPath());
-            return cachedIsGodotProject.Value;
+            if (!_cachedIsGodotProject.HasValue)
+                _cachedIsGodotProject = File.Exists(GetGodotProjectPath());
+            return _cachedIsGodotProject.Value;
         }
 
         protected override ProjectFeatures OnGetSupportedFeatures()
@@ -130,8 +129,8 @@ namespace GodotAddin
                 if (runConfiguration == GetRunConfiguration(ExecutionType.PlayInEditor))
                 {
                     // 'Play in Editor' requires the Godot Ide Client to be connected
-                    // to a server and the selected run configuration to be 'Tools'.
-                    if (!godotIdeClient.IsConnected || IdeApp.Workspace.ActiveConfigurationId != "Tools")
+                    // to a server and the selected run configuration to be 'Debug'.
+                    if (!_godotIdeClient.IsConnected || IdeApp.Workspace.ActiveConfigurationId != "Debug")
                         return false;
                 }
 
@@ -163,7 +162,7 @@ namespace GodotAddin
         {
             base.Dispose();
 
-            godotIdeClient?.Dispose();
+            _godotIdeClient?.Dispose();
         }
     }
 }

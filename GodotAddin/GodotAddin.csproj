@@ -8,9 +8,6 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="MonoDevelop.Addins" Version="0.4.7" />
-    </ItemGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\GodotTools.IdeConnection\GodotTools.IdeConnection.csproj">
-        </ProjectReference>
+        <PackageReference Include="GodotTools.IdeMessaging" Version="1.0.*" />
     </ItemGroup>
 </Project>

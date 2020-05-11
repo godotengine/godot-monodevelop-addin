@@ -21,7 +21,7 @@ namespace GodotAddin
             foreach (var session in DebuggingService.GetSessions())
             {
                 if (session is GodotDebuggerSession godotSession)
-                    godotSession.SendReloadScipts();
+                    godotSession.SendReloadScripts();
             }
         }
 
@@ -56,7 +56,7 @@ namespace GodotAddin
 
             SoftDebuggerRemoteArgs args;
 
-            if (godotCmd.ExecutionType == ExecutionType.Launch)
+            if (godotCmd.ExecutionType != ExecutionType.Attach)
                 args = new SoftDebuggerListenArgs("Godot", IPAddress.Loopback, 0);
             else
                 args = new SoftDebuggerConnectArgs("Godot", IPAddress.Loopback, attachPort);

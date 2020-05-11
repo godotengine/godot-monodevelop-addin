@@ -1,13 +1,15 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Threading;
-using GodotTools.IdeConnection;
+using System.Threading.Tasks;
+using GodotTools.IdeMessaging;
 using MonoDevelop.Core;
 using MonoDevelop.Ide;
 using MonoDevelop.Ide.Gui;
 
 namespace GodotAddin
 {
-    public class GodotMonoDevelopClient : GodotIdeClient
+    public class GodotMonoDevelopClient : DefaultClient
     {
         private class MonoDevelopLogger : ILogger
         {
@@ -37,9 +39,12 @@ namespace GodotAddin
             }
         }
 
-        public GodotMonoDevelopClient(string projectMetadataDir) : base(projectMetadataDir)
+        private static string DetermineIdentity() => // TODO: Proper detection of whether we are running on VSMac or MD
+            RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "VisualStudioForMac" : "MonoDevelop";
+
+        public GodotMonoDevelopClient(string godotProjectDir)
+            : base(DetermineIdentity(), godotProjectDir, new MonoDevelopLogger())
         {
-            Logger = new MonoDevelopLogger();
         }
 
         public string GodotEditorExecutablePath => GodotIdeMetadata.EditorExecutablePath;
@@ -50,19 +55,18 @@ namespace GodotAddin
             DispatchService.SynchronizationContext.Send(d, null);
         }
 
-        protected override void OpenFile(string file)
+        protected override async Task OpenFile(string file)
         {
-            OpenFile(file, line: 0, column: 0);
+            await OpenFile(file, line: 0, column: 0);
         }
 
-        protected override void OpenFile(string file, int line)
+        protected override async Task OpenFile(string file, int line)
         {
-            OpenFile(file, line, column: 0);
+            await OpenFile(file, line, column: 0);
         }
 
-        protected override void OpenFile(string file, int line, int column)
+        protected override Task OpenFile(string file, int line, int column)
         {
-
             DispatchToGuiThread(() =>
             {
                 var fileOpenInfo = new FileOpenInformation(new FilePath(file),
@@ -72,24 +76,25 @@ namespace GodotAddin
                     options: OpenDocumentOptions.Default
                 );
 
-                IdeApp.OpenFiles(new[] { fileOpenInfo });
+                IdeApp.OpenFiles(new[] {fileOpenInfo});
 
                 // Make the Ide window grab focus
                 IdeApp.Workbench.Present();
             });
+            return Task.CompletedTask;
         }
 
-        public bool SendPlay()
+        public Task<bool> SendPlay()
         {
             return WriteMessage(new Message("Play"));
         }
 
-        public bool SendPlay(string debuggerHost, int debuggerPort)
+        public Task<bool> SendPlay(string debuggerHost, int debuggerPort)
         {
             return WriteMessage(new Message("Play", debuggerHost, debuggerPort.ToString()));
         }
 
-        public bool SendReloadScripts()
+        public Task<bool> SendReloadScripts()
         {
             return WriteMessage(new Message("ReloadScripts"));
         }

@@ -14,26 +14,26 @@ namespace GodotAddin
 {
     public class GodotDebuggerSession : SoftDebuggerSession
     {
-        bool attached;
-        private NetworkStream godotRemoteDebuggerStream;
-        private GodotExecutionCommand GodotCmd;
+        private bool _attached;
+        private NetworkStream _godotRemoteDebuggerStream;
+        private GodotExecutionCommand _godotCmd;
 
-        public void SendReloadScipts()
+        public void SendReloadScripts()
         {
-            switch (GodotCmd.ExecutionType)
+            switch (_godotCmd.ExecutionType)
             {
                 case ExecutionType.Launch:
                     GodotVariantEncoder.Encode(
                         new List<GodotVariant> { "reload_scripts" },
-                        godotRemoteDebuggerStream
+                        _godotRemoteDebuggerStream
                     );
                     break;
                 case ExecutionType.PlayInEditor:
                 case ExecutionType.Attach:
-                    GodotCmd.GodotIdeClient.SendReloadScripts();
+                    _godotCmd.GodotIdeClient.SendReloadScripts();
                     break;
                 default:
-                    throw new NotImplementedException(GodotCmd.ExecutionType.ToString());
+                    throw new NotImplementedException(_godotCmd.ExecutionType.ToString());
             }
         }
 
@@ -48,7 +48,7 @@ namespace GodotAddin
             if (Settings.AlwaysUseConfiguredExecutable)
                 return Settings.GodotExecutablePath;
 
-            string godotPath = GodotCmd.GodotIdeClient.GodotEditorExecutablePath;
+            string godotPath = _godotCmd.GodotIdeClient.GodotEditorExecutablePath;
 
             if (string.IsNullOrEmpty(godotPath) || !File.Exists(godotPath))
                 return Settings.GodotExecutablePath;
@@ -56,22 +56,26 @@ namespace GodotAddin
             return godotPath;
         }
 
-        protected override void OnRun(DebuggerStartInfo startInfo)
+        protected override async void OnRun(DebuggerStartInfo startInfo)
         {
             var godotStartInfo = (GodotDebuggerStartInfo)startInfo;
 
-            GodotCmd = godotStartInfo.GodotCmd;
+            _godotCmd = godotStartInfo.GodotCmd;
 
-            switch (GodotCmd.ExecutionType)
+            switch (_godotCmd.ExecutionType)
             {
                 case ExecutionType.PlayInEditor:
                 {
-                    attached = false;
+                    _attached = false;
                     StartListening(godotStartInfo, out var assignedDebugPort);
 
                     string host = "127.0.0.1";
 
-                    GodotCmd.GodotIdeClient.SendPlay(host, assignedDebugPort);
+                    if (!await _godotCmd.GodotIdeClient.SendPlay(host, assignedDebugPort))
+                    {
+                        Exit();
+                        return;
+                    }
 
                     // TODO: Read the editor player stdout and stderr somehow
 
@@ -79,14 +83,14 @@ namespace GodotAddin
                 }
                 case ExecutionType.Launch:
                 {
-                    attached = false;
+                    _attached = false;
                     StartListening(godotStartInfo, out var assignedDebugPort);
 
                     // Listener to replace the Godot editor remote debugger.
                     // We use it to notify the game when assemblies should be reloaded.
                     var remoteDebugListener = new TcpListener(IPAddress.Any, 0);
                     remoteDebugListener.Start();
-                    remoteDebugListener.AcceptTcpClientAsync().ContinueWith(OnGodotRemoteDebuggerConnected);
+                    _ = remoteDebugListener.AcceptTcpClientAsync().ContinueWith(OnGodotRemoteDebuggerConnected);
 
                     string workingDir = startInfo.WorkingDirectory;
                     string host = "127.0.0.1";
@@ -109,7 +113,7 @@ namespace GodotAddin
                         "--debugger-agent=transport=dt_socket" +
                         $",address={host}:{assignedDebugPort}" +
                         ",server=n";
-                    
+
                     var process = Process.Start(processStartInfo);
 
                     // Listen for StdOut and StdErr
@@ -138,25 +142,25 @@ namespace GodotAddin
                 }
                 case ExecutionType.Attach:
                 {
-                    attached = true;
+                    _attached = true;
                     StartConnecting(godotStartInfo);
                     break;
                 }
                 default:
-                    throw new NotImplementedException(GodotCmd.ExecutionType.ToString());
+                    throw new NotImplementedException(_godotCmd.ExecutionType.ToString());
             }
         }
 
         private async Task OnGodotRemoteDebuggerConnected(Task<TcpClient> task)
         {
             var tcpClient = task.Result;
-            godotRemoteDebuggerStream = tcpClient.GetStream();
+            _godotRemoteDebuggerStream = tcpClient.GetStream();
             byte[] buffer = new byte[1000];
             while (tcpClient.Connected)
             {
                 // There is no library to decode this messages, so
                 // we just pump buffer so it doesn't go out of memory
-                var readBytes = await godotRemoteDebuggerStream.ReadAsync(buffer, 0, buffer.Length);
+                var readBytes = await _godotRemoteDebuggerStream.ReadAsync(buffer, 0, buffer.Length);
             }
         }
 
@@ -166,14 +170,14 @@ namespace GodotAddin
             // delayed events, problem is, that we send VM_START command back since we have to do that on
             // every event, but in this case when Mono is sending delayed events when we attach
             // runtime is not really suspended, hence it's throwing this exceptions, just ignore...
-            if (attached && ex is Mono.Debugger.Soft.VMNotSuspendedException)
+            if (_attached && ex is Mono.Debugger.Soft.VMNotSuspendedException)
                 return true;
             return base.HandleException(ex);
         }
 
         protected override void OnExit()
         {
-            if (attached)
+            if (_attached)
                 base.OnDetach();
             else
                 base.OnExit();
