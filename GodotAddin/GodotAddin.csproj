@@ -1,6 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net471</TargetFramework>
+        <TargetFramework>net472</TargetFramework>
+        <LangVersion>8.0</LangVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     </PropertyGroup>
     <ItemGroup>
         <AddinReference Include="MonoDevelop.Debugger" />
@@ -8,6 +13,13 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="MonoDevelop.Addins" Version="0.4.7" />
-        <PackageReference Include="GodotTools.IdeMessaging" Version="1.0.*" />
+        <PackageReference Include="GodotTools.IdeMessaging" Version="1.1.1" />
+    </ItemGroup>
+    <ItemGroup>
+        <Folder Include="GodotMessaging\" />
+        <Folder Include="Debugging\" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="GodotCompletionProviders" Version="1.0.0" />
     </ItemGroup>
 </Project>

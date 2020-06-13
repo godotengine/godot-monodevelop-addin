@@ -8,15 +8,18 @@ using System.Threading.Tasks;
 using Mono.Debugging.Client;
 using Mono.Debugging.Soft;
 using GodotAddin.Utils;
+using GodotTools.IdeMessaging.Requests;
 using System.Collections.Generic;
+using GodotTools.IdeMessaging;
 
-namespace GodotAddin
+namespace GodotAddin.Debugging
 {
     public class GodotDebuggerSession : SoftDebuggerSession
     {
         private bool _attached;
         private NetworkStream _godotRemoteDebuggerStream;
         private GodotExecutionCommand _godotCmd;
+        private Process _process;
 
         public void SendReloadScripts()
         {
@@ -30,7 +33,7 @@ namespace GodotAddin
                     break;
                 case ExecutionType.PlayInEditor:
                 case ExecutionType.Attach:
-                    _godotCmd.GodotIdeClient.SendReloadScripts();
+                    _godotCmd.GodotIdeClient.SendRequest<ReloadScriptsResponse>(new ReloadScriptsRequest());
                     break;
                 default:
                     throw new NotImplementedException(_godotCmd.ExecutionType.ToString());
@@ -50,13 +53,24 @@ namespace GodotAddin
 
             string godotPath = _godotCmd.GodotIdeClient.GodotEditorExecutablePath;
 
-            if (string.IsNullOrEmpty(godotPath) || !File.Exists(godotPath))
-                return Settings.GodotExecutablePath;
+            if (!string.IsNullOrEmpty(godotPath) && File.Exists(godotPath))
+            {
+                // If the setting is not yet assigned any value, set it to the currently connected Godot editor path
+                if (string.IsNullOrEmpty(Settings.GodotExecutablePath))
+                    Settings.GodotExecutablePath.Value = godotPath;
+                return godotPath;
+            }
 
-            return godotPath;
+            return Settings.GodotExecutablePath;
         }
 
-        protected override async void OnRun(DebuggerStartInfo startInfo)
+        private void EndSessionWithError(string errorMessage)
+        {
+            MonoDevelop.Ide.MessageService.ShowError(errorMessage);
+            EndSession();
+        }
+
+        protected override void OnRun(DebuggerStartInfo startInfo)
         {
             var godotStartInfo = (GodotDebuggerStartInfo)startInfo;
 
@@ -69,13 +83,23 @@ namespace GodotAddin
                     _attached = false;
                     StartListening(godotStartInfo, out var assignedDebugPort);
 
-                    string host = "127.0.0.1";
+                    var godotMessagingClient = _godotCmd.GodotIdeClient;
 
-                    if (!await _godotCmd.GodotIdeClient.SendPlay(host, assignedDebugPort))
+                    if (!godotMessagingClient.IsConnected)
                     {
-                        Exit();
+                        EndSessionWithError("No Godot editor instance connected");
                         return;
                     }
+
+                    string host = "127.0.0.1";
+
+                    var playRequest = new DebugPlayRequest { DebuggerHost = host, DebuggerPort = assignedDebugPort };
+                    _ = godotMessagingClient.SendRequest<DebugPlayResponse>(playRequest)
+                        .ContinueWith(t =>
+                        {
+                            if (t.Result.Status != GodotTools.IdeMessaging.MessageStatus.Ok)
+                                EndSessionWithError($"Received Play response with status: {MessageStatus.Ok}");
+                        });
 
                     // TODO: Read the editor player stdout and stderr somehow
 
@@ -114,7 +138,27 @@ namespace GodotAddin
                         $",address={host}:{assignedDebugPort}" +
                         ",server=n";
 
-                    var process = Process.Start(processStartInfo);
+                    _process = new Process { StartInfo = processStartInfo };
+
+                    try
+                    {
+                        if (!_process.Start())
+                        {
+                            EndSessionWithError("Failed to start Godot process");
+                            return;
+                        }
+                    }
+                    catch (System.ComponentModel.Win32Exception e)
+                    {
+                        EndSessionWithError($"Failed to start Godot process: {e.Message}");
+                        return;
+                    }
+
+                    if (_process.HasExited)
+                    {
+                        EndSessionWithError($"Godot process exited with code: {_process.ExitCode}");
+                        return;
+                    }
 
                     // Listen for StdOut and StdErr
 
@@ -123,8 +167,10 @@ namespace GodotAddin
                         Name = "Godot StandardOutput Reader",
                         IsBackground = true
                     };
-                    stdOutThread.Start(new ThreadStartArgs {
-                        IsStdErr = false, Stream = process.StandardOutput
+                    stdOutThread.Start(new ThreadStartArgs
+                    {
+                        IsStdErr = false,
+                        Stream = _process.StandardOutput
                     });
 
                     var stdErrThread = new Thread(OutputReader)
@@ -132,11 +178,15 @@ namespace GodotAddin
                         Name = "Godot StandardError Reader",
                         IsBackground = true
                     };
-                    stdErrThread.Start(new ThreadStartArgs {
-                        IsStdErr = true, Stream = process.StandardError
+                    stdErrThread.Start(new ThreadStartArgs
+                    {
+                        IsStdErr = true,
+                        Stream = _process.StandardError
                     });
 
-                    OnDebuggerOutput(false, $"Godot PID:{process.Id}{Environment.NewLine}");
+                    _process.Exited += (sender, args) => EndSession();
+
+                    OnDebuggerOutput(false, $"Godot PID:{_process.Id}{Environment.NewLine}");
 
                     break;
                 }
@@ -161,6 +211,7 @@ namespace GodotAddin
                 // There is no library to decode this messages, so
                 // we just pump buffer so it doesn't go out of memory
                 var readBytes = await _godotRemoteDebuggerStream.ReadAsync(buffer, 0, buffer.Length);
+                _ = readBytes;
             }
         }
 
@@ -178,9 +229,16 @@ namespace GodotAddin
         protected override void OnExit()
         {
             if (_attached)
+            {
                 base.OnDetach();
+            }
             else
+            {
                 base.OnExit();
+
+                if (_process != null && !_process.HasExited)
+                    _process.Kill();
+            }
         }
 
         private void OutputReader(object args)

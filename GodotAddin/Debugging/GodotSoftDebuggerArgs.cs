@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using Mono.Debugging.Soft;
 
-namespace GodotAddin
+namespace GodotAddin.Debugging
 {
     public class GodotSoftDebuggerArgs : SoftDebuggerRemoteArgs
     {

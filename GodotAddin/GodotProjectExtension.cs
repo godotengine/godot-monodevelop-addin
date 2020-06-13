@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using GodotAddin.Debugging;
+using GodotAddin.GodotMessaging;
+using GodotCompletionProviders;
+using GodotTools.IdeMessaging;
 using MonoDevelop.Core;
 using MonoDevelop.Core.Execution;
 using MonoDevelop.Ide;
@@ -26,6 +31,9 @@ namespace GodotAddin
             ExecutionType.Attach
         };
 
+        public Client GodotMessagingClient { get; private set; }
+        public MonoDevelopLogger Logger { get; } = new MonoDevelopLogger();
+
         private static SolutionItemRunConfiguration GetRunConfiguration(ExecutionType type)
         {
             switch (type)
@@ -41,7 +49,16 @@ namespace GodotAddin
             }
         }
 
-        private GodotMonoDevelopClient _godotIdeClient;
+        private void OnClientConnected()
+        {
+            // If the setting is not yet assigned any value, set it to the currently connected Godot editor path
+            if (string.IsNullOrEmpty(Settings.GodotExecutablePath))
+            {
+                string godotPath = GodotMessagingClient?.GodotEditorExecutablePath;
+                if (!string.IsNullOrEmpty(godotPath) && File.Exists(godotPath))
+                    Settings.GodotExecutablePath.Value = godotPath;
+            }
+        }
 
         protected override void OnItemReady()
         {
@@ -55,9 +72,15 @@ namespace GodotAddin
 
             try
             {
-                _godotIdeClient?.Dispose();
-                _godotIdeClient = new GodotMonoDevelopClient(godotProjectDir);
-                _godotIdeClient.Start();
+                string DetermineIdentity() => // TODO: Proper detection of whether we are running on VSMac or MD
+                    RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "VisualStudioForMac" : "MonoDevelop";
+
+                GodotMessagingClient?.Dispose();
+                GodotMessagingClient = new Client(DetermineIdentity(), godotProjectDir, new MessageHandler(), new MonoDevelopLogger());
+                GodotMessagingClient.Connected += OnClientConnected;
+                GodotMessagingClient.Start();
+
+                BaseCompletionProvider.Context = new GodotProviderContext(this);
             }
             catch (Exception e)
             {
@@ -84,7 +107,7 @@ namespace GodotAddin
 
                 var executionType = ExecutionTypes[runConfigurationIndex];
 
-                if (executionType == ExecutionType.PlayInEditor && !_godotIdeClient.IsConnected)
+                if (executionType == ExecutionType.PlayInEditor && !GodotMessagingClient.IsConnected)
                     LoggingService.LogError($"Cannot launch editor player because the Godot Ide Client is not connected");
 
                 string godotProjectPath = GetGodotProjectPath();
@@ -93,7 +116,7 @@ namespace GodotAddin
                     godotProjectPath,
                     executionType,
                     Path.GetDirectoryName(godotProjectPath),
-                    _godotIdeClient
+                    GodotMessagingClient
                 );
             }
 
@@ -128,9 +151,9 @@ namespace GodotAddin
             {
                 if (runConfiguration == GetRunConfiguration(ExecutionType.PlayInEditor))
                 {
-                    // 'Play in Editor' requires the Godot Ide Client to be connected
-                    // to a server and the selected run configuration to be 'Debug'.
-                    if (!_godotIdeClient.IsConnected || IdeApp.Workspace.ActiveConfigurationId != "Debug")
+                    // 'Play in Editor' requires the Godot Ide Client to be connected to the server and
+                    // the selected run configuration to be 'Debug' (editor/editor player configuration).
+                    if (!GodotMessagingClient.IsConnected || IdeApp.Workspace.ActiveConfigurationId != "Debug")
                         return false;
                 }
 
@@ -155,6 +178,7 @@ namespace GodotAddin
                     }
                 }
             }
+
             await base.OnExecuteCommand(monitor, context, configuration, executionCommand);
         }
 
@@ -162,7 +186,7 @@ namespace GodotAddin
         {
             base.Dispose();
 
-            _godotIdeClient?.Dispose();
+            GodotMessagingClient?.Dispose();
         }
     }
 }

@@ -7,7 +7,7 @@ using MonoDevelop.Core.Execution;
 using MonoDevelop.Debugger;
 using MonoDevelop.Ide;
 
-namespace GodotAddin
+namespace GodotAddin.Debugging
 {
     public class GodotDebuggerEngine : DebuggerEngineBackend
     {

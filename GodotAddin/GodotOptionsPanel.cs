@@ -6,49 +6,89 @@ namespace GodotAddin
 {
     public class GodotOptionsPanel : OptionsPanel
     {
-        private readonly FileEntry _godotExeFileEntry = new FileEntry();
-        private readonly Gtk.CheckButton _alwaysUseExeCheckButton = new Gtk.CheckButton();
+        private readonly FileEntry _godotExeFile = new FileEntry();
+        private readonly Gtk.CheckButton _alwaysUseExe = new Gtk.CheckButton { BorderWidth = 10 };
+
+        private readonly Gtk.CheckButton _provideNodePathCompletion = new Gtk.CheckButton { BorderWidth = 10 };
+        private readonly Gtk.CheckButton _provideInputActionCompletion = new Gtk.CheckButton { BorderWidth = 10 };
+        private readonly Gtk.CheckButton _provideResourcePathCompletion = new Gtk.CheckButton { BorderWidth = 10 };
+        private readonly Gtk.CheckButton _provideScenePathCompletion = new Gtk.CheckButton { BorderWidth = 10 };
+        private readonly Gtk.CheckButton _provideSignalNameCompletion = new Gtk.CheckButton { BorderWidth = 10 };
+
+        private void AddSection(Gtk.VBox vbox, string text)
+        {
+            var hbox = new Gtk.HBox();
+
+            var sectionLabel = new Gtk.Label
+            {
+                Text = $"<b>{GettextCatalog.GetString(text)}</b>",
+                UseMarkup = true,
+                Xalign = 0
+            };
+
+            hbox.PackStart(sectionLabel, false, false, 0);
+
+            vbox.PackStart(hbox, false, false, 0);
+        }
+
+        private static void AddFileProperty(Gtk.VBox vbox, string labelText, FileEntry fileEntry, ConfigurationProperty<string> property)
+        {
+            var alignment = new Gtk.Alignment(0f, 0f, 1f, 1f) { LeftPadding = 24 };
+
+            var innerVBox = new Gtk.VBox();
+            alignment.Add(innerVBox);
+
+            var hbox = new Gtk.HBox(false, 6);
+
+            var label = new Gtk.Label
+            {
+                Text = GettextCatalog.GetString(labelText),
+                Xalign = 0
+            };
+
+            hbox.PackStart(label, false, false, 0);
+            fileEntry.Path = property.Value;
+            hbox.PackStart(fileEntry, true, true, 0);
+
+            innerVBox.PackStart(hbox, false, false, 0);
+
+            vbox.PackStart(alignment, false, false, 0);
+        }
+
+        private static void AddCheckProperty(Gtk.VBox vbox, string labelText, Gtk.CheckButton checkButton, ConfigurationProperty<bool> property)
+        {
+            var hbox = new Gtk.HBox();
+
+            checkButton.Active = property.Value;
+            hbox.PackStart(checkButton, false, false, 0);
+
+            var label = new Gtk.Label
+            {
+                Text = GettextCatalog.GetString(labelText),
+                Xalign = 0
+            };
+
+            hbox.PackStart(label, true, true, 0);
+
+            vbox.PackStart(hbox, false, false, 0);
+        }
 
         public override Control CreatePanelWidget()
         {
             var vbox = new Gtk.VBox { Spacing = 6 };
 
-            var generalSectionLabel = new Gtk.Label
-            {
-                Text = $"<b>{GettextCatalog.GetString("General")}</b>",
-                UseMarkup = true,
-                Xalign = 0
-            };
+            AddSection(vbox, "Debugging");
 
-            vbox.PackStart(generalSectionLabel, false, false, 0);
+            AddCheckProperty(vbox, "Always use this executable.", _alwaysUseExe, Settings.AlwaysUseConfiguredExecutable);
+            AddFileProperty(vbox, "Godot executable:", _godotExeFile, Settings.GodotExecutablePath);
 
-            var godotExeHBox = new Gtk.HBox { BorderWidth = 10, Spacing = 6 };
+            AddSection(vbox, "Code completion");
 
-            var godotExeLabel = new Gtk.Label
-            {
-                Text = GettextCatalog.GetString("Godot executable:"),
-                Xalign = 0
-            };
-
-            godotExeHBox.PackStart(godotExeLabel, false, false, 0);
-            _godotExeFileEntry.Path = Settings.GodotExecutablePath.Value;
-            godotExeHBox.PackStart(_godotExeFileEntry, true, true, 0);
-
-            vbox.PackStart(godotExeHBox, false, false, 0);
-
-            var alwaysUseExeHBox = new Gtk.HBox { BorderWidth = 10, Spacing = 6 };
-
-            var alwaysUseExeLabel = new Gtk.Label
-            {
-                Text = GettextCatalog.GetString("Always use this executable:"),
-                Xalign = 0
-            };
-
-            alwaysUseExeHBox.PackStart(alwaysUseExeLabel, false, false, 0);
-            _alwaysUseExeCheckButton.Active = Settings.AlwaysUseConfiguredExecutable.Value;
-            alwaysUseExeHBox.PackStart(_alwaysUseExeCheckButton, true, true, 0);
-
-            vbox.PackStart(alwaysUseExeHBox, false, false, 0);
+            AddCheckProperty(vbox, "Provide node path completions.", _provideNodePathCompletion, Settings.ProvideNodePathCompletions);
+            AddCheckProperty(vbox, "Provide input action completions.", _provideInputActionCompletion, Settings.ProvideInputActionCompletions);
+            AddCheckProperty(vbox, "Provide resource path completions.", _provideResourcePathCompletion, Settings.ProvideResourcePathCompletions);
+            AddCheckProperty(vbox, "Provide scene path completions.", _provideScenePathCompletion, Settings.ProvideScenePathCompletions);
+            AddCheckProperty(vbox, "Provide signal name completions.", _provideSignalNameCompletion, Settings.ProvideSignalNameCompletions);
 
             vbox.ShowAll();
 
@@ -57,8 +97,14 @@ namespace GodotAddin
 
         public override void ApplyChanges()
         {
-            Settings.GodotExecutablePath.Value = _godotExeFileEntry.Path;
-            Settings.GodotExecutablePath.Value = _godotExeFileEntry.Path;
+            Settings.GodotExecutablePath.Value = _godotExeFile.Path;
+            Settings.AlwaysUseConfiguredExecutable.Value = _alwaysUseExe.Active;
+
+            Settings.ProvideNodePathCompletions.Value = _provideNodePathCompletion.Active;
+            Settings.ProvideInputActionCompletions.Value = _provideInputActionCompletion.Active;
+            Settings.ProvideResourcePathCompletions.Value = _provideResourcePathCompletion.Active;
+            Settings.ProvideScenePathCompletions.Value = _provideScenePathCompletion.Active;
+            Settings.ProvideSignalNameCompletions.Value = _provideSignalNameCompletion.Active;
         }
     }
 }

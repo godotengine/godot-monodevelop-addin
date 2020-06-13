@@ -1,11 +1,12 @@
-﻿using MonoDevelop.Core.Execution;
+﻿using GodotTools.IdeMessaging;
+using MonoDevelop.Core.Execution;
 
-namespace GodotAddin
+namespace GodotAddin.Debugging
 {
     public class GodotExecutionCommand : ExecutionCommand
     {
         public GodotExecutionCommand(string godotProjectPath, ExecutionType executionType,
-            string workingDirectory, GodotMonoDevelopClient godotIdeClient)
+            string workingDirectory, Client godotIdeClient)
         {
             GodotProjectPath = godotProjectPath;
             ExecutionType = executionType;
@@ -16,7 +17,7 @@ namespace GodotAddin
         public string GodotProjectPath { get; }
         public ExecutionType ExecutionType { get; }
         public string WorkingDirectory { get; }
-        public GodotMonoDevelopClient GodotIdeClient { get; }
+        public Client GodotIdeClient { get; }
     }
 
     public enum ExecutionType

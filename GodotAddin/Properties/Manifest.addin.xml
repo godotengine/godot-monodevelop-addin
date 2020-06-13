@@ -5,11 +5,14 @@
             id="MonoDevelop.MicroFramework.Debugger"
             name="Debugger for Godot"
             features="Breakpoints, Pause, Stepping, DebugFile, ConditionalBreakpoints, Tracepoints, Catchpoints, Disassembly"
-            type="GodotAddin.GodotDebuggerEngine" />
+            type="GodotAddin.Debugging.GodotDebuggerEngine" />
     </Extension>
     <Extension path="/MonoDevelop/Ide/GlobalOptionsDialog">
-        <Section id="Godot" _label="Godot Engine" insertafter="VersionControl">
+        <Section id="Godot" _label="Godot" insertafter="VersionControl">
             <Section id="GodotGeneral" _label="General" fill="true" class="GodotAddin.GodotOptionsPanel" />
         </Section>
+    </Extension>
+    <Extension path="/MonoDevelop/Ide/TypeService/MefHostServices">
+        <Assembly file="GodotCompletionProviders.dll"/>
     </Extension>
 </ExtensionModel>

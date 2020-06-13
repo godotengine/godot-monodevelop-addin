@@ -1,6 +1,6 @@
 ﻿using Mono.Debugging.Soft;
 
-namespace GodotAddin
+namespace GodotAddin.Debugging
 {
     public class GodotDebuggerStartInfo : SoftDebuggerStartInfo
     {

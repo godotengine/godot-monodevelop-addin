@@ -21,10 +21,25 @@ namespace GodotAddin
             return string.Empty;
         }
 
-        public static readonly ConfigurationProperty<string> GodotExecutablePath =
-            ConfigurationProperty.Create("Godot.GodotExecutable", DetermineDefaultGodotPath());
-
         public static readonly ConfigurationProperty<bool> AlwaysUseConfiguredExecutable =
-            ConfigurationProperty.Create("Godot.AlwaysUseConfiguredExecutable", false);
+            ConfigurationProperty.Create("Godot.Debugging.AlwaysUseConfiguredExecutable", false);
+
+        public static readonly ConfigurationProperty<string> GodotExecutablePath =
+            ConfigurationProperty.Create("Godot.Debugging.GodotExecutable", DetermineDefaultGodotPath());
+
+        public static ConfigurationProperty<bool> ProvideNodePathCompletions { get; set; } =
+            ConfigurationProperty.Create("Godot.CodeCompletion.ProvideNodePathCompletions", true);
+
+        public static ConfigurationProperty<bool> ProvideInputActionCompletions { get; set; } =
+            ConfigurationProperty.Create("Godot.CodeCompletion.ProvideInputActionCompletions", true);
+
+        public static ConfigurationProperty<bool> ProvideResourcePathCompletions { get; set; } =
+            ConfigurationProperty.Create("Godot.CodeCompletion.ProvideResourcePathCompletions", true);
+
+        public static ConfigurationProperty<bool> ProvideScenePathCompletions { get; set; } =
+            ConfigurationProperty.Create("Godot.CodeCompletion.ProvideScenePathCompletions", true);
+
+        public static ConfigurationProperty<bool> ProvideSignalNameCompletions { get; set; } =
+            ConfigurationProperty.Create("Godot.CodeCompletion.ProvideSignalNameCompletions", true);
     }
 }
