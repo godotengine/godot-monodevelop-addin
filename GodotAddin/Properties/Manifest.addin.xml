@@ -15,4 +15,10 @@
     <Extension path="/MonoDevelop/Ide/TypeService/MefHostServices">
         <Assembly file="GodotCompletionProviders.dll"/>
     </Extension>
+    <Extension path = "/MonoDevelop/ProjectModel/ProjectModelExtensions">
+        <ProjectFlavor
+            guid="{8F3E2DF0-C35C-4265-82FC-BEA011F4A7ED}"
+            type="GodotAddin.GodotProjectExtension"
+            alias="GodotProject" />
+    </Extension>
 </ExtensionModel>
