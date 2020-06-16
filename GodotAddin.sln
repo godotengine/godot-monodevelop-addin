@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotAddin", "GodotAddin\GodotAddin.csproj", "{EE86BFF1-F6B6-42AA-9121-EE2FAC123A12}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GodotCompletionProviders", "GodotCompletionProviders\GodotCompletionProviders.csproj", "{584073EB-FA0E-4566-9E15-9F5926502095}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -13,5 +15,9 @@ Global
 		{EE86BFF1-F6B6-42AA-9121-EE2FAC123A12}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE86BFF1-F6B6-42AA-9121-EE2FAC123A12}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE86BFF1-F6B6-42AA-9121-EE2FAC123A12}.Release|Any CPU.Build.0 = Release|Any CPU
+		{584073EB-FA0E-4566-9E15-9F5926502095}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{584073EB-FA0E-4566-9E15-9F5926502095}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{584073EB-FA0E-4566-9E15-9F5926502095}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{584073EB-FA0E-4566-9E15-9F5926502095}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

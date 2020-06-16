@@ -20,6 +20,6 @@
         <Folder Include="Debugging\" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="GodotCompletionProviders" Version="1.0.0" />
+      <ProjectReference Include="..\GodotCompletionProviders\GodotCompletionProviders.csproj" />
     </ItemGroup>
 </Project>
