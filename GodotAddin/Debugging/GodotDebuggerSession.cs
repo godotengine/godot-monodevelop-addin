@@ -93,7 +93,13 @@ namespace GodotAddin.Debugging
 
                     string host = "127.0.0.1";
 
-                    var playRequest = new DebugPlayRequest { DebuggerHost = host, DebuggerPort = assignedDebugPort };
+                    var playRequest = new DebugPlayRequest
+                    {
+                        DebuggerHost = host,
+                        DebuggerPort = assignedDebugPort,
+                        BuildBeforePlaying = false
+                    };
+
                     _ = godotMessagingClient.SendRequest<DebugPlayResponse>(playRequest)
                         .ContinueWith(t =>
                         {
