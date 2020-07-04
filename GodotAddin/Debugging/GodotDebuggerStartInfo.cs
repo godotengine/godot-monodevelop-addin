@@ -1,4 +1,4 @@
-﻿using Mono.Debugging.Soft;
+using Mono.Debugging.Soft;
 
 namespace GodotAddin.Debugging
 {
