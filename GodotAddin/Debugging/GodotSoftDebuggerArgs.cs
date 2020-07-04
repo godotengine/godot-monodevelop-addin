@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Mono.Debugging.Soft;
 
 namespace GodotAddin.Debugging

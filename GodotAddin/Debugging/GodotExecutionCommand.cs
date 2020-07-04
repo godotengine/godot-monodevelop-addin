@@ -1,4 +1,4 @@
-﻿using GodotTools.IdeMessaging;
+using GodotTools.IdeMessaging;
 using MonoDevelop.Core.Execution;
 
 namespace GodotAddin.Debugging

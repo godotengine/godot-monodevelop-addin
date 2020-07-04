@@ -1,4 +1,4 @@
-﻿using MonoDevelop.Ide.Gui.Dialogs;
+using MonoDevelop.Ide.Gui.Dialogs;
 using MonoDevelop.Components;
 using MonoDevelop.Core;
 
